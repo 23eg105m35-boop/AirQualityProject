@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Air Quality Intelligence System</title>
+
+  <style>
+    :root{
+      --bg-1:#07111f;
+      --bg-2:#0b1730;
+      --panel:rgba(18, 28, 49, 0.88);
+      --panel-dark:rgba(10, 18, 33, 0.96);
+      --line:rgba(255,255,255,0.08);
+      --text:#f8fbff;
+      --muted:#9eb1c9;
+      --good:#22c55e;
+      --moderate:#facc15;
+      --unhealthy:#f97316;
+      --severe:#ef4444;
+      --shadow:0 18px 40px rgba(0,0,0,0.28);
+      --radius:22px;
+    }
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    body{
+      font-family:"Segoe UI", Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(34,197,94,0.10), transparent 20%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      min-height:100vh;
+      padding:28px;
+    }
+
+    .container{
+      max-width:1200px;
+      margin:auto;
+      display:grid;
+      gap:22px;
+    }
+
+    .card{
+      background:var(--panel);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius);
+      backdrop-filter:blur(10px);
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.4fr 0.8fr;
+      gap:22px;
+    }
+
+    .hero-main{
+      padding:28px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .hero-main::after{
+      content:"";
+      position:absolute;
+      right:-60px;
+      bottom:-60px;
+      width:220px;
+      height:220px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(56,189,248,0.16), transparent 70%);
+      pointer-events:none;
+    }
+
+    .eyebrow{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:0.18em;
+      color:#88a0c0;
+      margin-bottom:12px;
+    }
+
+    .title{
+      font-size:36px;
+      font-weight:700;
+      margin-bottom:10px;
+    }
+
+    .subtitle{
+      color:var(--muted);
+      line-height:1.7;
+      margin-bottom:24px;
+      max-width:720px;
+    }
+
+    .top-actions{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:14px;
+      margin-bottom:24px;
+    }
+
+    button{
+      background:linear-gradient(135deg, #0ea5e9, #38bdf8);
+      border:none;
+      padding:13px 22px;
+      border-radius:12px;
+      cursor:pointer;
+      color:white;
+      font-size:15px;
+      font-weight:600;
+      transition:0.25s ease;
+    }
+
+    button:hover{
+      transform:translateY(-1px);
+      filter:brightness(1.05);
+    }
+
+    select{
+      background:#0d1729;
+      color:white;
+      border:1px solid var(--line);
+      padding:12px 14px;
+      border-radius:12px;
+      font-size:15px;
+      outline:none;
+      min-width:150px;
+    }
+
+    .top-detail-grid{
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:14px;
+      margin-bottom:22px;
+    }
+
+    .aqi-strip{
+      display:grid;
+      grid-template-columns:130px 1fr;
+      gap:18px;
+      align-items:center;
+    }
+
+    .aqi-box{
+      background:linear-gradient(145deg, rgba(56,189,248,0.14), rgba(250,204,21,0.12));
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:22px;
+      padding:18px;
+      text-align:center;
+    }
+
+    .aqi-box h2{
+      font-size:46px;
+      line-height:1;
+      margin-bottom:8px;
+    }
+
+    .aqi-box p{
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .aqi-scale-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .aqi-scale{
+      height:16px;
+      border-radius:999px;
+      background:linear-gradient(90deg, #22c55e 0%, #84cc16 20%, #facc15 45%, #f97316 72%, #ef4444 100%);
+      position:relative;
+      overflow:visible;
+    }
+
+    .aqi-marker{
+      position:absolute;
+      top:50%;
+      left:0%;
+      transform:translate(-50%, -50%);
+      width:22px;
+      height:22px;
+      border-radius:50%;
+      background:#ffffff;
+      border:4px solid #0f172a;
+      box-shadow:0 0 0 6px rgba(255,255,255,0.10);
+      transition:left 0.4s ease;
+    }
+
+    .scale-labels{
+      display:flex;
+      justify-content:space-between;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .hero-side{
+      padding:22px;
+      display:grid;
+      gap:14px;
+    }
+
+    .mini-card{
+      background:var(--panel-dark);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .mini-label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+
+    .mini-value{
+      font-size:20px;
+      font-weight:700;
+    }
+
+    .insight-text{
+      color:var(--text);
+      line-height:1.6;
+      font-size:15px;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns:1.1fr 0.9fr;
+      gap:22px;
+    }
+
+    .section{
+      padding:24px;
+    }
+
+    .section-title{
+      font-size:24px;
+      margin-bottom:18px;
+    }
+
+    .metrics{
+      display:grid;
+      gap:14px;
+    }
+
+    .metric{
+      background:var(--panel-dark);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .metric-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:12px;
+      gap:10px;
+    }
+
+    .metric-name{
+      font-size:17px;
+      font-weight:600;
+    }
+
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:600;
+      border:1px solid transparent;
+    }
+
+    .badge.good{
+      background:rgba(34,197,94,0.14);
+      color:#86efac;
+      border-color:rgba(34,197,94,0.28);
+    }
+
+    .badge.warn{
+      background:rgba(250,204,21,0.14);
+      color:#fde68a;
+      border-color:rgba(250,204,21,0.28);
+    }
+
+    .badge.danger{
+      background:rgba(239,68,68,0.14);
+      color:#fca5a5;
+      border-color:rgba(239,68,68,0.28);
+    }
+
+    .metric-info{
+      display:grid;
+      grid-template-columns:90px 1fr 150px;
+      gap:12px;
+      align-items:center;
+    }
+
+    .metric-info span{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .track{
+      height:10px;
+      background:rgba(255,255,255,0.07);
+      border-radius:999px;
+      overflow:hidden;
+    }
+
+    .fill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg, #22c55e, #facc15, #ef4444);
+      transition:width 0.4s ease;
+    }
+
+    .risk-panel{
+      display:grid;
+      gap:16px;
+    }
+
+    .risk-banner{
+      border-radius:20px;
+      padding:18px;
+      background:linear-gradient(145deg, rgba(56,189,248,0.16), rgba(250,204,21,0.14));
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    .risk-banner .risk-status{
+      font-size:30px;
+      font-weight:700;
+      margin-top:6px;
+    }
+
+    .risk-message{
+      background:var(--panel-dark);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      line-height:1.7;
+      color:#e5eefb;
+      min-height:92px;
+    }
+
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:14px;
+      margin-top:10px;
+    }
+
+    .summary-item{
+      background:var(--panel-dark);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:18px;
+      text-align:center;
+    }
+
+    .summary-item p{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:8px;
+    }
+
+    .summary-item h3{
+      font-size:32px;
+    }
+
+    .actions-grid{
+      display:grid;
+      grid-template-columns:repeat(2, 1fr);
+      gap:14px;
+      margin-top:18px;
+    }
+
+    .action-card{
+      background:var(--panel-dark);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+    }
+
+    .action-card h4{
+      font-size:16px;
+      margin-bottom:8px;
+    }
+
+    .action-card p{
+      color:var(--muted);
+      line-height:1.6;
+      font-size:14px;
+    }
+
+    .status-line{
+      margin-top:16px;
+      font-size:16px;
+      font-weight:600;
+    }
+
+    @media (max-width: 950px){
+      .hero,
+      .layout,
+      .aqi-strip,
+      .summary-grid,
+      .actions-grid,
+      .top-detail-grid{
+        grid-template-columns:1fr;
+      }
+
+      .metric-info{
+        grid-template-columns:1fr;
+      }
+
+      .title{
+        font-size:30px;
+      }
+
+      body{
+        padding:16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <section class="hero">
+      <div class="card hero-main">
+        <div class="eyebrow">Air Quality Intelligence System</div>
+        <div class="title">Smarter Air Quality Dashboard</div>
+        <div class="subtitle">
+          Monitor real-time air conditions, understand the main trigger behind poor air quality,
+          and get health-focused recommendations based on the selected user profile.
+        </div>
+
+        <div class="top-actions">
+          <button onclick="loadData()">Analyze Air Quality</button>
+          <div>
+            <label for="profile" style="display:block; color:var(--muted); font-size:13px; margin-bottom:6px;">User Profile</label>
+            <select id="profile" onchange="updateActions(); updateProfileNote();">
+              <option>Child</option>
+              <option selected>Adult</option>
+              <option>Elderly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="top-detail-grid">
+          <div class="mini-card">
+            <div class="mini-label">Monitoring Zone</div>
+            <div class="mini-value" id="topCity">--</div>
+          </div>
+
+          <div class="mini-card">
+            <div class="mini-label">Last Updated</div>
+            <div class="mini-value" id="lastUpdated">--</div>
+          </div>
+
+          <div class="mini-card">
+            <div class="mini-label">Air Condition</div>
+            <div class="mini-value" id="airCondition">--</div>
+          </div>
+
+          <div class="mini-card">
+            <div class="mini-label">Safety Status</div>
+            <div class="mini-value" id="safetyStatus">--</div>
+          </div>
+        </div>
+
+        <div class="mini-card" style="margin-bottom:20px;">
+          <div class="mini-label">Quick Insight</div>
+          <div class="insight-text" id="quickInsight">
+            Waiting for latest air quality data...
+          </div>
+        </div>
+
+        <div class="mini-card" style="margin-bottom:24px;">
+          <div class="mini-label">Profile Note</div>
+          <div class="insight-text" id="profileNote">
+            Adults can usually tolerate moderate conditions, but prolonged exposure should still be reduced when AQI is high.
+          </div>
+        </div>
+
+        <div class="aqi-strip">
+          <div class="aqi-box">
+            <h2 id="aqi">--</h2>
+            <p id="aqiLabel">Waiting for data</p>
+          </div>
+
+          <div class="aqi-scale-wrap">
+            <div class="aqi-scale">
+              <div class="aqi-marker" id="aqiMarker"></div>
+            </div>
+            <div class="scale-labels">
+              <span>Good</span>
+              <span>Fair</span>
+              <span>Moderate</span>
+              <span>Unhealthy</span>
+              <span>Severe</span>
+            </div>
+            <div class="status-line" id="status">Loading current status...</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card hero-side">
+        <div class="mini-card">
+          <div class="mini-label">City</div>
+          <div class="mini-value" id="city">--</div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-label">Safe Limit</div>
+          <div class="mini-value">≤ 50</div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-label">Excess Above Safe Limit</div>
+          <div class="mini-value" id="excess">--</div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-label">Primary Trigger</div>
+          <div class="mini-value" id="primaryTrigger">--</div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="card section">
+      <div class="section-title">AQI Summary</div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <p>Gas Level</p>
+          <h3 id="gasValue">--</h3>
+        </div>
+        <div class="summary-item">
+          <p>Temperature</p>
+          <h3 id="tempValue">--</h3>
+        </div>
+        <div class="summary-item">
+          <p>Humidity</p>
+          <h3 id="humValue">--</h3>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="card section">
+        <div class="section-title">Root Cause Breakdown</div>
+        <div class="metrics">
+
+          <div class="metric">
+            <div class="metric-head">
+              <div class="metric-name">Gas Level</div>
+              <div class="badge" id="gasBadge">--</div>
+            </div>
+            <div class="metric-info">
+              <span id="gasText">--</span>
+              <div class="track"><div class="fill" id="gasBar"></div></div>
+              <span>Safe: 100</span>
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-head">
+              <div class="metric-name">Temperature</div>
+              <div class="badge" id="tempBadge">--</div>
+            </div>
+            <div class="metric-info">
+              <span id="tempText">--</span>
+              <div class="track"><div class="fill" id="tempBar"></div></div>
+              <span>Safe: 25–30°C</span>
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-head">
+              <div class="metric-name">Humidity</div>
+              <div class="badge" id="humBadge">--</div>
+            </div>
+            <div class="metric-info">
+              <span id="humText">--</span>
+              <div class="track"><div class="fill" id="humBar"></div></div>
+              <span>Safe: 40–60%</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="card section risk-panel">
+        <div class="section-title">Health Risk</div>
+
+        <div class="risk-banner">
+          <div class="eyebrow">Current advisory</div>
+          <div class="risk-status" id="riskLevel">--</div>
+        </div>
+
+        <div class="risk-message" id="riskMessage">
+          Waiting for analysis...
+        </div>
+      </div>
+    </section>
+
+    <section class="card section">
+      <div class="section-title">Recommended Actions</div>
+      <div class="actions-grid" id="actionsGrid"></div>
+    </section>
+  </div>
+
+  <script>
+    let latestStatus = "Moderate";
+
+    function clamp(value, min, max){
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function setBadge(elementId, text, type){
+      const el = document.getElementById(elementId);
+      el.textContent = text;
+      el.className = "badge " + type;
+    }
+
+    function setBar(elementId, percent){
+      document.getElementById(elementId).style.width = clamp(percent, 0, 100) + "%";
+    }
+
+    function getStatusInfo(aqi){
+      if(aqi <= 50){
+        return {
+          status: "Good",
+          message: "Air quality is safe for most people. Normal outdoor activity is generally fine.",
+          color: "#22c55e"
+        };
+      } else if(aqi <= 100){
+        return {
+          status: "Moderate",
+          message: "Sensitive groups should reduce outdoor activity and avoid long exposure.",
+          color: "#facc15"
+        };
+      } else if(aqi <= 200){
+        return {
+          status: "Unhealthy",
+          message: "Wear a mask outdoors, reduce exposure, and be careful if you have breathing issues.",
+          color: "#f97316"
+        };
+      } else {
+        return {
+          status: "Very Unhealthy",
+          message: "Stay indoors as much as possible and avoid outdoor activities until conditions improve.",
+          color: "#ef4444"
+        };
+      }
+    }
+
+    function getMetricState(type, value){
+      if(type === "gas"){
+        if(value <= 100) return { label:"Safe", badge:"good", percent:value };
+        if(value <= 150) return { label:"High", badge:"warn", percent:value * 0.8 };
+        return { label:"Critical", badge:"danger", percent:100 };
+      }
+
+      if(type === "temp"){
+        if(value >= 25 && value <= 30) return { label:"Normal", badge:"good", percent:((value-20)/20)*100 };
+        if((value > 30 && value <= 35) || (value >= 20 && value < 25)) return { label:"Watch", badge:"warn", percent:((value-20)/20)*100 };
+        return { label:"Risk", badge:"danger", percent:100 };
+      }
+
+      if(type === "hum"){
+        if(value >= 40 && value <= 60) return { label:"Balanced", badge:"good", percent:value };
+        if((value >= 30 && value < 40) || (value > 60 && value <= 70)) return { label:"Watch", badge:"warn", percent:value };
+        return { label:"Risk", badge:"danger", percent:value };
+      }
+    }
+
+    function findPrimaryTrigger(gas, temp, hum){
+      const gasRisk = Math.max(0, gas - 100);
+      const tempRisk = temp > 30 ? (temp - 30) * 12 : temp < 25 ? (25 - temp) * 12 : 0;
+      const humRisk = hum > 60 ? (hum - 60) * 5 : hum < 40 ? (40 - hum) * 5 : 0;
+
+      const risks = [
+        {name:"Gas Level", score:gasRisk},
+        {name:"Temperature", score:tempRisk},
+        {name:"Humidity", score:humRisk}
+      ];
+
+      risks.sort((a,b) => b.score - a.score);
+      return risks[0].score === 0 ? "No Major Trigger" : risks[0].name;
+    }
+
+    function getQuickInsight(aqi, gas, temp, hum){
+      if(aqi <= 50){
+        return "Air quality is currently safe. Major readings are within or near recommended comfort levels.";
+      } else if(aqi <= 100){
+        return "Air quality is acceptable, but sensitive groups should be careful because one or more readings are drifting from the ideal range.";
+      } else if(aqi <= 200){
+        return "Air quality is unhealthy. The environment needs attention because one or more sensor values are outside the recommended safe range.";
+      } else {
+        return "Air quality is very unhealthy. Immediate protective action is advised to reduce exposure and avoid discomfort or breathing stress.";
+      }
+    }
+
+    function updateProfileNote(){
+      const profile = document.getElementById("profile").value;
+      const note = document.getElementById("profileNote");
+
+      if(profile === "Child"){
+        note.textContent = "Children are more sensitive to polluted air. Outdoor play should be reduced when AQI rises above safe levels.";
+      } else if(profile === "Elderly"){
+        note.textContent = "Elderly people may experience discomfort more quickly. Long exposure should be avoided, especially in unhealthy conditions.";
+      } else {
+        note.textContent = "Adults can usually tolerate moderate conditions, but prolonged exposure should still be reduced when AQI is high.";
+      }
+    }
+
+    function updateActions(){
+      const profile = document.getElementById("profile").value;
+      const actionsGrid = document.getElementById("actionsGrid");
+
+      let actions = [];
+
+      if(latestStatus === "Good"){
+        actions = [
+          ["Normal Activity", "Air conditions are comfortable. Daily activity can continue as usual."],
+          ["Keep Monitoring", "Continue checking values regularly to catch sudden changes early."],
+          ["Ventilation", "Maintain fresh airflow indoors for better comfort and air balance."],
+          ["Healthy Routine", "Encourage hydration and a clean indoor environment."]
+        ];
+      } else if(latestStatus === "Moderate"){
+        actions = [
+          ["Limit Exposure", "Reduce prolonged exposure in affected places, especially during peak hours."],
+          ["Use Ventilation", "Improve air circulation using windows, fans, or purifiers where possible."],
+          ["Mask if Needed", "Use an N95 mask if staying outside or in crowded zones for long periods."],
+          ["Watch Sensitive Groups", "Children, elderly people, and those with asthma should be more careful."]
+        ];
+      } else {
+        actions = [
+          ["Stay Indoors", "Avoid unnecessary outdoor exposure until AQI improves."],
+          ["Wear N95 Mask", "Use a proper mask if outdoor movement is unavoidable."],
+          ["Close Openings", "Keep windows and doors managed to limit polluted air entering indoors."],
+          ["Use Purifier", "Air purifiers or filtered ventilation can help reduce indoor exposure."]
+        ];
+      }
+
+      if(profile === "Child"){
+        actions[3] = ["Child Safety", "Children should avoid outdoor play and remain in better-ventilated indoor areas."];
+      } else if(profile === "Elderly"){
+        actions[3] = ["Elderly Safety", "Older adults should avoid long exposure and keep medicines accessible if needed."];
+      }
+
+      actionsGrid.innerHTML = actions.map(item => `
+        <div class="action-card">
+          <h4>${item[0]}</h4>
+          <p>${item[1]}</p>
+        </div>
+      `).join("");
+    }
+
+    function loadData(){
+      fetch("http://localhost:8000/data")
+        .then(res => res.json())
+        .then(data => {
+          const city = data.city || "Unknown City";
+          const gas = Math.round(data.gas || 0);
+          const temp = Number(data.temperature || 0);
+          const hum = Math.round(data.humidity || 0);
+          const aqi = Math.round(data.aqi || 0);
+
+          document.getElementById("city").textContent = city;
+          document.getElementById("topCity").textContent = city;
+          document.getElementById("aqi").textContent = aqi;
+          document.getElementById("excess").textContent = Math.max(0, aqi - 50);
+
+          const info = getStatusInfo(aqi);
+          latestStatus = info.status;
+
+          document.getElementById("aqiLabel").textContent = info.status;
+          document.getElementById("status").textContent = "Status: " + info.status;
+          document.getElementById("status").style.color = info.color;
+          document.getElementById("riskLevel").textContent = info.status;
+          document.getElementById("riskMessage").textContent = info.message;
+          document.getElementById("airCondition").textContent = info.status;
+          document.getElementById("safetyStatus").textContent = aqi <= 50 ? "Safe" : "Needs Attention";
+          document.getElementById("quickInsight").textContent = getQuickInsight(aqi, gas, temp, hum);
+          document.getElementById("lastUpdated").textContent = new Date().toLocaleTimeString();
+
+          const markerPercent = clamp((aqi / 300) * 100, 0, 100);
+          document.getElementById("aqiMarker").style.left = markerPercent + "%";
+
+          document.getElementById("gasValue").textContent = gas;
+          document.getElementById("tempValue").textContent = temp + "°C";
+          document.getElementById("humValue").textContent = hum + "%";
+
+          document.getElementById("gasText").textContent = "Current: " + gas;
+          document.getElementById("tempText").textContent = "Current: " + temp + "°C";
+          document.getElementById("humText").textContent = "Current: " + hum + "%";
+
+          const gasState = getMetricState("gas", gas);
+          const tempState = getMetricState("temp", temp);
+          const humState = getMetricState("hum", hum);
+
+          setBadge("gasBadge", gasState.label, gasState.badge);
+          setBadge("tempBadge", tempState.label, tempState.badge);
+          setBadge("humBadge", humState.label, humState.badge);
+
+          setBar("gasBar", gasState.percent);
+          setBar("tempBar", tempState.percent);
+          setBar("humBar", humState.percent);
+
+          document.getElementById("primaryTrigger").textContent = findPrimaryTrigger(gas, temp, hum);
+
+          updateProfileNote();
+          updateActions();
+        })
+        .catch(error => {
+          console.error("Error loading data:", error);
+          document.getElementById("status").textContent = "Could not load data from server.";
+          document.getElementById("riskMessage").textContent = "Please make sure your backend is running on http://localhost:8000/data";
+          document.getElementById("quickInsight").textContent = "No live data is available right now. Start the backend service and refresh the dashboard.";
+        });
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
