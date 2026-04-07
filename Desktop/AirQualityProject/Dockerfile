@@ -4,7 +4,6 @@ WORKDIR /app
 
 COPY src /app/src
 COPY data /app/data
-COPY dashboard.html /app/
 
 RUN javac /app/src/*.java
 
