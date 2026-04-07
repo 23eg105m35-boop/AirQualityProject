@@ -2,9 +2,10 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-COPY src /app/src
-COPY data /app/data
+COPY . .
 
-RUN javac /app/src/*.java
+RUN find . -name "*.java"
 
-CMD ["java","-cp","/app/src","MainApp"]
+RUN javac src/*.java
+
+CMD ["java","-cp","src","MainApp"]
