@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN javac Desktop/AirQualityProject/src/*.java
+RUN javac src/*.java
 
-CMD ["java","-cp","Desktop/AirQualityProject/src","MainApp"]
+CMD ["java","-cp","src","MainApp"]
