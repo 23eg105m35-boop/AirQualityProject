@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN javac src/AQIPredictor.java src/CityHotspotAnalyzer.java src/DataLoader.java src/HealthAdvisor.java src/HotspotDetector.java src/MainApp.java
+RUN cd src && javac *.java
 
 CMD ["java","-cp","src","MainApp"]
