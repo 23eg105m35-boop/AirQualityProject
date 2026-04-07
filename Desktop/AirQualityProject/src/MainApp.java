@@ -2,99 +2,105 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class MainApp {
 
+    static List<String[]> dataset = new ArrayList<>();
 
-static List<String[]> dataset = new ArrayList<>();
+    public static void main(String[] args) throws Exception {
 
-public static void main(String[] args) throws Exception {
+        loadDataset();
 
-    loadDataset();
+        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
 
-    HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        server.createContext("/data", MainApp::handleData);
 
-    server.createContext("/data", MainApp::handleData);
+        server.setExecutor(null);
 
-    server.start();
+        server.start();
 
-    System.out.println("Server started at http://localhost:8000");
-}
-
-static void loadDataset() throws Exception {
-
-    BufferedReader br = new BufferedReader(
-        new FileReader("C:/Users/vikas/OneDrive/Desktop/AirQualityProject/data/city_day.csv")
-    );
-
-    String line;
-
-    br.readLine(); // skip header
-
-    while((line = br.readLine()) != null){
-
-        String[] row = line.split(",");
-
-        if(row.length > 9 &&
-           !row[2].isEmpty() &&
-           !row[3].isEmpty() &&
-           !row[5].isEmpty()){
-
-            dataset.add(row);
-        }
+        System.out.println("Server started at http://localhost:8000/data");
     }
 
-    br.close();
+    // load csv dataset
+    static void loadDataset() throws Exception {
 
-    System.out.println("Dataset loaded: " + dataset.size() + " rows");
-}
+        BufferedReader br = new BufferedReader(
+                new FileReader("../data/city_day.csv")
+        );
 
-static void handleData(HttpExchange exchange) throws IOException {
+        String line;
 
-    Random rand = new Random();
+        br.readLine(); // skip header
 
-    String[] row = dataset.get(rand.nextInt(dataset.size()));
+        while ((line = br.readLine()) != null) {
 
-    String city = row[0];
+            String[] row = line.split(",");
 
-    double pm25 = Double.parseDouble(row[2]);
-    double pm10 = Double.parseDouble(row[3]);
-    double no2  = Double.parseDouble(row[5]);
+            // check required columns not empty
+            if (row.length > 15 &&
+                    !row[0].trim().isEmpty() &&
+                    !row[7].trim().isEmpty() &&
+                    !row[8].trim().isEmpty() &&
+                    !row[10].trim().isEmpty()) {
 
-    // AQI approximation using highest pollutant
-    double aqi = Math.max(pm25, Math.max(pm10, no2));
+                dataset.add(row);
+            }
+        }
 
-    double gas = pm25;
+        br.close();
 
-    int temperature = 20 + rand.nextInt(15);
+        System.out.println("Dataset loaded successfully");
+        System.out.println("Total rows = " + dataset.size());
+    }
 
-    int humidity = 40 + rand.nextInt(40);
+    // API method
+    static void handleData(HttpExchange exchange) throws IOException {
 
-    String json =
-    "{"+
-    "\"city\":\""+city+"\","+
-    "\"pm25\":"+pm25+","+
-    "\"pm10\":"+pm10+","+
-    "\"no2\":"+no2+","+
-    "\"gas\":"+gas+","+
-    "\"temperature\":"+temperature+","+
-    "\"humidity\":"+humidity+","+
-    "\"aqi\":"+aqi+
-    "}";
+        Random random = new Random();
 
-    exchange.getResponseHeaders().add("Content-Type","application/json");
+        String[] row = dataset.get(random.nextInt(dataset.size()));
 
-    exchange.getResponseHeaders().add("Access-Control-Allow-Origin","*");
+        String city = row[0].trim();
 
-    exchange.sendResponseHeaders(200,json.length());
+        double pm25 = Double.parseDouble(row[7].trim());
+        double pm10 = Double.parseDouble(row[8].trim());
+        double no2 = Double.parseDouble(row[10].trim());
 
-    OutputStream os = exchange.getResponseBody();
+        // calculate AQI (simple logic)
+        double aqi = Math.max(pm25, Math.max(pm10, no2));
 
-    os.write(json.getBytes());
+        // additional simulated values
+        int temperature = 20 + random.nextInt(15);
+        int humidity = 40 + random.nextInt(40);
 
-    os.close();
-}
+        double gas = pm25;
 
+        String json =
+                "{"
+                        + "\"city\":\"" + city + "\","
+                        + "\"pm25\":" + pm25 + ","
+                        + "\"pm10\":" + pm10 + ","
+                        + "\"no2\":" + no2 + ","
+                        + "\"gas\":" + gas + ","
+                        + "\"temperature\":" + temperature + ","
+                        + "\"humidity\":" + humidity + ","
+                        + "\"aqi\":" + aqi
+                        + "}";
 
+        byte[] response = json.getBytes(StandardCharsets.UTF_8);
+
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+
+        exchange.sendResponseHeaders(200, response.length);
+
+        OutputStream os = exchange.getResponseBody();
+
+        os.write(response);
+
+        os.close();
+    }
 }
