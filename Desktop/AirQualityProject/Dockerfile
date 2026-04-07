@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY . .
 
-RUN javac src/*.java
+RUN find . -name "*.java" -print
+
+RUN javac $(find . -name "*.java")
 
 CMD ["java","-cp","src","MainApp"]
