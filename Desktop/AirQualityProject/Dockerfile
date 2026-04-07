@@ -2,7 +2,7 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-COPY . .
+COPY Desktop/AirQualityProject .
 
 RUN javac src/*.java
 
