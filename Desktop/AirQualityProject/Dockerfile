@@ -2,8 +2,10 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-COPY . .
+COPY src ./src
+COPY dashboard.html .
+COPY data ./data
 
-RUN javac -d . src/*.java
+RUN javac src/*.java
 
-CMD ["java","MainApp"]
+CMD ["java","-cp","src","MainApp"]
